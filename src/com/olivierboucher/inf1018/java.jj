@@ -1235,7 +1235,7 @@ void ClassOrInterfaceBodyDeclaration(boolean isInterface):
       EnumDeclaration(modifiers)
     |
       LOOKAHEAD( [ TypeParameters() ] <IDENTIFIER> "(" )
-      ConstructorDeclaration()
+      ConstructorDeclaration(modifiers)
     |
       LOOKAHEAD( Type() <IDENTIFIER> ( "[" "]" )* ( "," | "=" | ";" ) )
       FieldDeclaration(modifiers)
@@ -1325,13 +1325,9 @@ void MethodDeclaration(int modifiers):
   {
     m.setReturnType(returnType);
     objectManager.addToCurrentObject(m);  }
-  /*
-  	NOTE(Olivier): We're about to enter the method body, method is on top of stack
-  */
+  //NOTE(Olivier): We're about to enter the method body, method is on top of stack
   ( Block()
-  /*
-  	NOTE(Olivier): We left the method body, so let's pop the method out
-  */
+  //NOTE(Olivier): We left the method body, so let's pop the method out
   {
     objectManager.pop();
   }
@@ -1390,21 +1386,36 @@ JavaAttribute FormalParameter():
 }
 /*
 	TODO(Olivier): Modified to record the constructor to the actual class
+				   Modified the method to accept modifiers as parameter
 */
-void ConstructorDeclaration():
-{}
+void ConstructorDeclaration(int modifiers):
+{
+	List<JavaAttribute> parameters;
+	Token nameToken;
+}
 {
   [ TypeParameters() ]
   // Modifiers matched in the caller
-  <IDENTIFIER> FormalParameters() [ "throws" NameList() ]
+  nameToken = <IDENTIFIER> parameters = FormalParameters() [ "throws" NameList() ]
   "{"
     [ LOOKAHEAD(ExplicitConstructorInvocation())
          ExplicitConstructorInvocation()
     ]
+    {
+      JavaMethod m = new JavaMethod(nameToken.toString());
+      m.addParameters(parameters);
+      m.setModifiers(modifiers);
+      objectManager.addToCurrentObject(m);    }
+    //NOTE(Olivier): We're entering the constructor body, it is on top of stack
     ( BlockStatement() )*
+    //NOTE(Olivier): We're exiting the constructor body, lets pop out the method
+    {
+      objectManager.pop();    }
   "}"
 }
-
+/*
+	TODO(Olivier): 
+*/
 void ExplicitConstructorInvocation():
 {}
 {
