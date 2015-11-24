@@ -9,7 +9,6 @@ public class JavaObjectManager extends Stack<Object> {
 	    IHasAttributes o = (IHasAttributes) peek();
 	    o.addAttribute(a);
 	}
-	push(a);
     }
     
     public void addToCurrentObject(JavaClass c){

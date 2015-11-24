@@ -1247,24 +1247,53 @@ void ClassOrInterfaceBodyDeclaration(boolean isInterface):
 |
   ";"
 }
-
+/*
+	NOTE(Olivier): Modified to add field declaration to current class
+*/
 void FieldDeclaration(int modifiers):
-{}
+{
+  JavaAttribute a = new JavaAttribute();
+  a.setModifiers(modifiers);
+  String type = "";
+  String name = "";
+}
 {
   // Modifiers are already matched in the caller
-  Type() VariableDeclarator() ( "," VariableDeclarator() )* ";"
+  type = Type() name = VariableDeclarator()
+  {
+    a.setName(name);
+    a.setType(type);
+    objectManager.addToCurrentObject(a);  }
+   ( "," VariableDeclarator()
+   {
+      //NOTE(Olivier): Type and modifiers are already defined		
+      a.setName(name);
+      objectManager.addToCurrentObject(a);   }
+    )* ";"
 }
-
-void VariableDeclarator():
-{}
+/*
+	NOTE(Olivier): Modified to propagate variable name
+*/
+String VariableDeclarator():
 {
-  VariableDeclaratorId() [ "=" VariableInitializer() ]
+  String name = "";
 }
-
-void VariableDeclaratorId():
-{}
 {
-  <IDENTIFIER> ( "[" "]" )*
+  name = VariableDeclaratorId() [ "=" VariableInitializer() ]
+  {
+    return name;  }
+}
+/*
+	NOTE(Olivier): Modified to get variable name
+*/
+String VariableDeclaratorId():
+{
+	Token nameToken;
+}
+{
+  nameToken = <IDENTIFIER> ( "[" "]" )*
+  {
+    return nameToken.toString();  }
 }
 
 void VariableInitializer():
@@ -1280,38 +1309,88 @@ void ArrayInitializer():
 {
   "{" [ VariableInitializer() ( LOOKAHEAD(2) "," VariableInitializer() )* ] [ "," ] "}"
 }
-
+/*
+	NOTE(Olivier): Modified to record the method and add it to the actual class
+*/
 void MethodDeclaration(int modifiers):
-{}
+{
+  JavaMethod m;
+  String returnType = "";
+}
 {
   // Modifiers already matched in the caller!
   [ TypeParameters() ]
-  ResultType()
-  MethodDeclarator() [ "throws" NameList() ]
-  ( Block() | ";" )
+  returnType = ResultType()
+  m = MethodDeclarator() [ "throws" NameList() ]
+  {
+    m.setReturnType(returnType);
+    objectManager.addToCurrentObject(m);  }
+  /*
+  	NOTE(Olivier): We're about to enter the method body, method is on top of stack
+  */
+  ( Block()
+  /*
+  	NOTE(Olivier): We left the method body, so let's pop the method out
+  */
+  {
+    objectManager.pop();
+  }
+  | ";" )
 }
-
-void MethodDeclarator():
-{}
+/*
+	NOTE(Olivier): Modified to return a JavaMethod instance
+*/
+JavaMethod MethodDeclarator():
 {
-  <IDENTIFIER> FormalParameters() ( "[" "]" )*
+	Token nameToken;
+	List<JavaAttribute> parameters;
 }
-
-void FormalParameters():
-{}
 {
-  "(" [ FormalParameter() ( "," FormalParameter() )* ] ")"
-}
+  nameToken = <IDENTIFIER> parameters = FormalParameters() ( "[" "]" )*
 
-void FormalParameter():
-{}
+  {
+    JavaMethod m = new JavaMethod(nameToken.toString());
+    m.addParameters(parameters);
+    return m;  }
+}
+/*
+	NOTE(Olivier): Modified to return a list of JavaAttribute
+*/
+List<JavaAttribute> FormalParameters():
+{
+	List<JavaAttribute> parameters = new ArrayList<JavaAttribute>();
+	JavaAttribute buffer;
+}
+{
+  "(" [ buffer = FormalParameter()  {
+    parameters.add(buffer);  }
+   ( "," buffer = FormalParameter()   {
+     parameters.add(buffer);   }
+    )* ] ")"
+
+  {
+    return parameters;  }	  
+}
+/*
+	NOTE(Olivier): Modified to return a JavaAttribute instance
+*/
+JavaAttribute FormalParameter():
+{
+	int modifiers;
+	String type = "";
+	String name = "";
+}
 {
   // danson, added
   //          [ "final" | Annotation() ]
   // See Java Language Specification, 3rd Edition, section 8.4.1
-  Modifiers() [ "final" | Annotation() ] Type() [ "..." ] VariableDeclaratorId()
+  modifiers = Modifiers() [ "final" | Annotation() ] type = Type() [ "..." ] name = VariableDeclaratorId()
+  {
+    return new JavaAttribute(name, type, modifiers);  }
 }
-
+/*
+	TODO(Olivier): Modified to record the constructor to the actual class
+*/
 void ConstructorDeclaration():
 {}
 {
@@ -1343,21 +1422,36 @@ void Initializer():
 /*
  * Type, name and expression syntax follows.
  */
-
-void Type():
-{}
+ 
+/*
+	NOTE(Olivier): Modified to return type name
+*/
+String Type():
 {
-   LOOKAHEAD(2) ReferenceType()
- |
-   PrimitiveType()
+  String name = "";
 }
-
-void ReferenceType():
-{}
 {
-   PrimitiveType() ( LOOKAHEAD(2) "[" "]" )+
+   LOOKAHEAD(2) name = ReferenceType()
+ |
+   name = PrimitiveType()
+
+   {
+     return name;   }
+}
+/*
+	NOTE(Olivier): Modified to return type name
+*/
+String ReferenceType():
+{
+  String name = "";
+}
+{
+   name = PrimitiveType() ( LOOKAHEAD(2) "[" "]" )+
   |
-   ( ClassOrInterfaceType() ) ( LOOKAHEAD(2) "[" "]" )*
+   ( name = ClassOrInterfaceType() ) ( LOOKAHEAD(2) "[" "]" )*
+
+   {
+     return name;   }
 }
 /*
 	NOTE(Olivier): Modified to return the actual class or interface name
@@ -1395,33 +1489,47 @@ void WildcardBounds():
    "super" ReferenceType()
 }
 
-
-void PrimitiveType():
-{}
+/*
+	NOTE(Olivier): Modified to return the primitive name
+*/
+String PrimitiveType():
 {
-  "boolean"
-|
-  "char"
-|
-  "byte"
-|
-  "short"
-|
-  "int"
-|
-  "long"
-|
-  "float"
-|
-  "double"
+  Token nameToken;
 }
-
-void ResultType():
-{}
 {
-  "void"
+  nameToken = "boolean"
 |
-  Type()
+  nameToken = "char"
+|
+  nameToken = "byte"
+|
+  nameToken = "short"
+|
+  nameToken = "int"
+|
+  nameToken = "long"
+|
+  nameToken = "float"
+|
+  nameToken = "double"
+
+  {
+    return nameToken.toString();  }
+}
+/*
+	NOTE(Olivier): Modified to return the type string
+*/
+String ResultType():
+{
+	Token nameToken;
+	String name = "";
+}
+{
+  nameToken = "void"  {
+    return nameToken.toString();  }
+|
+  name = Type()  {
+    return name;  }
 }
 
 /*
