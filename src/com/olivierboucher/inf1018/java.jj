@@ -44,8 +44,8 @@ import java.io.*;import java.util.*;/**
  * Grammar to parse Java version 1.5
  * @author Sreenivasa Viswanadha - Simplified and enhanced for 1.5
  */public class JavaParser{
-  private JavaObjectManager objectManager;  public JavaParser(File file)  {    try    {
-      this.objectManager = new JavaObjectManager();
+  private JavaObjectManager objectManager;  public JavaParser(File file, JavaObjectManager objectManager)  {    try    {
+      this.objectManager = objectManager;
       InputStream stream = new FileInputStream(file);
       jj_input_stream = new JavaCharStream(stream, 1, 1); 
       token_source = new JavaParserTokenManager(jj_input_stream);      ReInit(stream);    }    catch (Exception e)    {      e.printStackTrace();    }  }
@@ -53,14 +53,40 @@ import java.io.*;import java.util.*;/**
   public JavaObjectManager getObjectManager()  {
     return this.objectManager;  }  public static void main(String args [])  {    //INFO(Olivier): Assert that args[0] is provided
     if (args.length != 1)    { //NOTE(Olivier): This is strict, maybe we could use < 0
-      System.out.println("Wrong number of arguments provided. Please specify only one file");      System.exit(1);    }    File file = new File(args [0]);    //INFO(Olivier): Assert that the path exists
-    if (!file.exists())    {      System.out.println("The provided path does not exist.");      System.exit(1);    }    //INFO(Olivier): Assert that the path leads to a file
-    if (!file.isFile())    { //NOTE(Olivier): We could allow directory and analyze every file contained
-      System.out.println("The provided path must lead to a file");      System.exit(1);    }    //INFO(Olivier): Assert that we can read the file
-    if (!file.canRead())    {      System.out.println("File permissions does not allow reading.");      System.exit(1);    }        try    {
-      JavaParser parser = new JavaParser(file);
-      parser.getObjectManager().push(new JavaFile(file));      parser.CompilationUnit();
-      System.out.println("Success");    }    catch (ParseException e)    {      System.out.println(e.getMessage());    }  }}
+      System.out.println("Wrong number of arguments provided. Please specify only one file");      System.exit(1);    }
+        File file = new File(args [0]);
+    List<File> fileList = new ArrayList<File>();
+        //INFO(Olivier): Assert that the path exists
+    if (!file.exists())    {      System.out.println("The provided path does not exist.");      System.exit(1);    }    //INFO(Olivier): Check if it is a directory or a single file
+    if (!file.isFile())    {
+    	//NOTE(Olivier): We get everything from the folder
+    	List<File> javaFiles = JavaFileExplorer.getAllJavaFiles(file, 999);
+    	if(javaFiles != null)    	{
+    	  fileList.addAll(javaFiles);    	}
+    	else    	{
+    	  System.out.println("Error loading files from directory.");
+      	  System.exit(1);    	}    }
+    else    {
+      //NOTE(Olivier): A single file was passed
+      fileList.add(file);    }
+
+      JavaObjectManager om = new JavaObjectManager();
+      JavaParser parser;
+      File f = null; //Current file
+      Iterator<File> it = fileList.iterator();
+      while(it.hasNext())      {
+        try
+    	{
+	        f = it.next();
+	        parser = new JavaParser(f, om);
+	        parser.getObjectManager().push(new JavaFile(file));
+	      	parser.CompilationUnit();
+	      	System.out.println(String.format("%s: Success", f.getName()));
+	    }
+		catch (ParseException e)
+		{
+			System.out.println(String.format("%s: Error: %s", f.getName(), e.getMessage()));
+		}      }  }}
 
 PARSER_END(JavaParser)
 
@@ -1938,9 +1964,16 @@ void BlockStatement():
 }
 
 void LocalVariableDeclaration():
-{}
 {
-  Modifiers() Type() VariableDeclarator() ( "," VariableDeclarator() )*
+	int modifiers;
+	String type;
+	String name;
+}
+{
+  modifiers = Modifiers() type = Type() name = VariableDeclarator()  {
+    objectManager.addToCurrentObject(new JavaAttribute(name, type, modifiers));  }
+  ( "," name = VariableDeclarator()  {
+    objectManager.addToCurrentObject(new JavaAttribute(name, type, modifiers));  } )*
 }
 
 void EmptyStatement():
