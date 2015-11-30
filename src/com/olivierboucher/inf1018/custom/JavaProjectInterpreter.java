@@ -169,23 +169,23 @@ public class JavaProjectInterpreter {
 	}
 	
     	System.out.println("==========================================");
-	System.out.println("=============== Modifiers");
+	System.out.println("=============== Modifiers ================");
 	System.out.println("==========================================");
 	System.out.println(sbModifiers.toString());
 	System.out.println("==========================================");
-	System.out.println("=============== Visibility");
+	System.out.println("=============== Visibility ===============");
 	System.out.println("==========================================");
 	System.out.println(sbVisibility.toString());
 	System.out.println("==========================================");
-	System.out.println("=============== Class Schemes");
+	System.out.println("=============== Class Schemes ============");
 	System.out.println("==========================================");
 	System.out.println(sbInheritance);
 	System.out.println("==========================================");
-	System.out.println("=============== Coupling");
+	System.out.println("=============== Coupling =================");
 	System.out.println("==========================================");
 	System.out.println(sbCoupling.toString());
 	System.out.println("==========================================");
-	System.out.println("=============== Call Hierarchy");
+	System.out.println("=============== Call Hierarchy ===========");
 	System.out.println("==========================================");
 	System.out.println(sbCalls.toString());
     }
