@@ -3,22 +3,25 @@ package com.olivierboucher.inf1018.custom;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JavaMethod implements IHasAttributes {
+public class JavaMethod implements IHasAttributes, IHasMethodCalls {
     private String name;
     private String returnType;
     private int modifiers;
     private List<JavaAttribute> parameters;
     private List<JavaAttribute> localVariables;
+    private List<JavaMethodCall> methodCalls;
     
     public JavaMethod() {
 	this.parameters = new ArrayList<>();
 	this.localVariables = new ArrayList<>();
+	this.methodCalls = new ArrayList<>();
     }
     
     public JavaMethod(String name) {
 	this.name = name;
 	this.parameters = new ArrayList<>();
 	this.localVariables = new ArrayList<>();
+	this.methodCalls = new ArrayList<>();
     }
     
     public JavaMethod(String name, int modifiers){
@@ -26,6 +29,7 @@ public class JavaMethod implements IHasAttributes {
 	this.modifiers = modifiers;
 	this.parameters = new ArrayList<>();
 	this.localVariables = new ArrayList<>();
+	this.methodCalls = new ArrayList<>();
     }
     
     public JavaMethod(String name, int modifiers, String returnType){
@@ -34,11 +38,17 @@ public class JavaMethod implements IHasAttributes {
 	this.returnType = returnType;
 	this.parameters = new ArrayList<>();
 	this.localVariables = new ArrayList<>();
+	this.methodCalls = new ArrayList<>();
     }
     
     @Override
     public void addAttribute(JavaAttribute a) {
 	this.localVariables.add(a);
+    }
+    
+    @Override
+    public void addMethodCall(JavaMethodCall m) {
+	this.methodCalls.add(m);
     }
     
     public void addParameters(List<JavaAttribute> l){
@@ -61,5 +71,41 @@ public class JavaMethod implements IHasAttributes {
 
     public void setModifiers(int modifiers) {
         this.modifiers = modifiers;
+    }
+
+    public List<JavaAttribute> getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(List<JavaAttribute> parameters) {
+        this.parameters = parameters;
+    }
+
+    public List<JavaAttribute> getLocalVariables() {
+        return localVariables;
+    }
+
+    public void setLocalVariables(List<JavaAttribute> localVariables) {
+        this.localVariables = localVariables;
+    }
+
+    public List<JavaMethodCall> getMethodCalls() {
+        return methodCalls;
+    }
+
+    public void setMethodCalls(List<JavaMethodCall> methodCalls) {
+        this.methodCalls = methodCalls;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getReturnType() {
+        return returnType;
+    }
+
+    public int getModifiers() {
+        return modifiers;
     }
 }

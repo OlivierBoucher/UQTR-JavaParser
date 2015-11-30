@@ -16,6 +16,10 @@ public class JavaAttribute {
     public JavaAttribute(String name){
 	this.name = name;
     }
+    
+    public boolean isPrimitive(){
+	return (type.equals("boolean") || type.equals("char") || type.equals("byte") || type.equals("short") || type.equals("int") || type.equals("long") || type.equals("double") || type.equals("float"));
+    }
 
     public String getName() {
         return name;

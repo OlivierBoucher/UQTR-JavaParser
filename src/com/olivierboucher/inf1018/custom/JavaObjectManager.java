@@ -11,6 +11,13 @@ public class JavaObjectManager extends Stack<Object> {
 	}
     }
     
+    public void addToCurrentObject(JavaMethodCall m){
+	if(peek() instanceof IHasMethodCalls){
+	    IHasMethodCalls o = (IHasMethodCalls) peek();
+	    o.addMethodCall(m);
+	}
+    }
+    
     public void addToCurrentObject(JavaClass c){
 	if(peek() instanceof IHasClasses){
 	    IHasClasses o = (IHasClasses) peek();

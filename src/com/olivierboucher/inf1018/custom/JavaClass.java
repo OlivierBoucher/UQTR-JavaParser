@@ -12,10 +12,12 @@ public class JavaClass implements IHasClasses, IHasAttributes, IHasInterfaces, I
     private List<JavaMethod> methods;
     private String name;
     private String superClassName;
+    
+
     private int modifiers;
     
     public JavaClass(String name){
-	this.name = name;
+	this.setName(name);
 	this.classes = new ArrayList<>();
 	this.interfaces = new ArrayList<>();
 	this.attributes = new ArrayList<>();
@@ -56,5 +58,56 @@ public class JavaClass implements IHasClasses, IHasAttributes, IHasInterfaces, I
     @Override
     public void addClass(JavaClass c) {
 	this.classes.add(c);
+    }
+
+    public String getName() {
+	return name;
+    }
+    public String getSuperClassName() {
+        return superClassName;
+    }
+
+    public List<JavaClass> getClasses() {
+        return classes;
+    }
+
+    public void setClasses(List<JavaClass> classes) {
+        this.classes = classes;
+    }
+
+    public List<JavaInterface> getInterfaces() {
+        return interfaces;
+    }
+
+    public void setInterfaces(List<JavaInterface> interfaces) {
+        this.interfaces = interfaces;
+    }
+
+    public List<JavaAttribute> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(List<JavaAttribute> attributes) {
+        this.attributes = attributes;
+    }
+
+    public List<JavaMethod> getMethods() {
+        return methods;
+    }
+
+    public void setMethods(List<JavaMethod> methods) {
+        this.methods = methods;
+    }
+
+    public JavaClass getParent() {
+        return parent;
+    }
+
+    public JavaFile getFile() {
+        return file;
+    }
+
+    public int getModifiers() {
+        return modifiers;
     }
 }

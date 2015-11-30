@@ -31,7 +31,7 @@ options {
   ERROR_REPORTING = true;
   STATIC = false;
   COMMON_TOKEN_ACTION = false;
-  TOKEN_FACTORY = "MyToken";
+  TOKEN_FACTORY = "JavaToken";
   JDK_VERSION = "1.5";
 }
 
@@ -74,6 +74,7 @@ import java.io.*;import java.util.*;/**
       JavaParser parser;
       File f = null; //Current file
       Iterator<File> it = fileList.iterator();
+      int errors = 0;
       while(it.hasNext())      {
         try
     	{
@@ -85,8 +86,14 @@ import java.io.*;import java.util.*;/**
 	    }
 		catch (ParseException e)
 		{
+		  	errors++;
 			System.out.println(String.format("%s: Error: %s", f.getName(), e.getMessage()));
-		}      }  }}
+		}      }
+      //NOTE(Olivier): Output results if parsed correctly
+      if(errors == 0)      {
+        JavaProjectInterpreter interpreter = new JavaProjectInterpreter(om);
+        interpreter.debugTree();
+      	interpreter.outputProjectStatisticsToConsole();      }  }}
 
 PARSER_END(JavaParser)
 
@@ -969,14 +976,14 @@ TOKEN :
   < RUNSIGNEDSHIFT: ">>>" >
   {
      matchedToken.kind = GT;
-     ((MyToken)matchedToken).realKind = RUNSIGNEDSHIFT;
+     ((JavaToken)matchedToken).realKind = RUNSIGNEDSHIFT;
      input_stream.backup(2);
      matchedToken.image = ">";
   }
 | < RSIGNEDSHIFT: ">>" >
   {
      matchedToken.kind = GT;
-     ((MyToken)matchedToken).realKind = RSIGNEDSHIFT;
+     ((JavaToken)matchedToken).realKind = RSIGNEDSHIFT;
      input_stream.backup(1);
      matchedToken.image = ">";
   }
@@ -1411,7 +1418,7 @@ JavaAttribute FormalParameter():
     return new JavaAttribute(name, type, modifiers);  }
 }
 /*
-	TODO(Olivier): Modified to record the constructor to the actual class
+	NOTE(Olivier): Modified to record the constructor to the actual class
 				   Modified the method to accept modifiers as parameter
 */
 void ConstructorDeclaration(int modifiers):
@@ -1439,9 +1446,6 @@ void ConstructorDeclaration(int modifiers):
       objectManager.pop();    }
   "}"
 }
-/*
-	TODO(Olivier): 
-*/
 void ExplicitConstructorInvocation():
 {}
 {
@@ -1468,12 +1472,14 @@ String Type():
   String name = "";
 }
 {
-   LOOKAHEAD(2) name = ReferenceType()
+   (     LOOKAHEAD(2) name = ReferenceType()
  |
    name = PrimitiveType()
+   )
 
    {
      return name;   }
+
 }
 /*
 	NOTE(Olivier): Modified to return type name
@@ -1483,9 +1489,9 @@ String ReferenceType():
   String name = "";
 }
 {
-   name = PrimitiveType() ( LOOKAHEAD(2) "[" "]" )+
+   (     name = PrimitiveType() ( LOOKAHEAD(2) "[" "]" )+
   |
-   ( name = ClassOrInterfaceType() ) ( LOOKAHEAD(2) "[" "]" )*
+   ( name = ClassOrInterfaceType() ) ( LOOKAHEAD(2) "[" "]" )*)
 
    {
      return name;   }
@@ -1534,7 +1540,7 @@ String PrimitiveType():
   Token nameToken;
 }
 {
-  nameToken = "boolean"
+  (    nameToken = "boolean"
 |
   nameToken = "char"
 |
@@ -1548,10 +1554,11 @@ String PrimitiveType():
 |
   nameToken = "float"
 |
-  nameToken = "double"
+  nameToken = "double")
 
   {
-    return nameToken.toString();  }
+    return nameToken.toString();
+  }
 }
 /*
 	NOTE(Olivier): Modified to return the type string
@@ -1579,14 +1586,17 @@ String Name():
  */
 {
   Token nameToken;
+  String buffer = "";
 }
 {
-  nameToken = <IDENTIFIER>
-  ( LOOKAHEAD(2) "." nameToken = <IDENTIFIER>
+  nameToken = <IDENTIFIER>  {
+    buffer = nameToken.toString();  }
+  ( LOOKAHEAD(2) "." nameToken = <IDENTIFIER>  {
+    buffer += "." + nameToken.toString();  }
   )*
 
   {
-    return nameToken.toString();  }
+    return buffer;  }
 }
 
 void NameList():
@@ -1762,10 +1772,20 @@ void CastExpression():
   "(" Type() ")" UnaryExpressionNotPlusMinus()
 }
 
+/*
+	NOTE(Olivier): Modified to track direct method calls
+*/
 void PrimaryExpression():
-{}
 {
-  PrimaryPrefix() ( LOOKAHEAD(2) PrimarySuffix() )*
+	String method = "";
+	String buffer = "";
+}
+{
+  method = PrimaryPrefix() ( LOOKAHEAD(2)  buffer = PrimarySuffix()  {
+      method += buffer;  } )*
+  {
+    if(method.split("[\\.]").length > 1)    {
+      objectManager.addToCurrentObject(new JavaMethodCall(method));    }  }
 }
 
 void MemberSelector():
@@ -1773,10 +1793,15 @@ void MemberSelector():
 {
   "." TypeArguments() <IDENTIFIER>
 }
-
-void PrimaryPrefix():
-{}
+/*
+	NOTE(Olivier): Modified to return the name as a String
+*/
+String PrimaryPrefix():
 {
+  	String nameToken = null;
+	String name = "";
+}
+{(
   Literal()
 |
   LOOKAHEAD( ( <IDENTIFIER> "." )* "this" )
@@ -1798,13 +1823,18 @@ void PrimaryPrefix():
   LOOKAHEAD( ResultType() "." "class" )
   ResultType() "." "class"
 |
-  Name()
+  name = Name())  {
+    return name;  }
 }
-
-void PrimarySuffix():
-{}
+/*
+	NOTE(Olivier): Modified to return the name as a string
+*/
+String PrimarySuffix():
 {
-  LOOKAHEAD("." "super" ".")
+	Token nameToken = null;
+}
+{
+  (    LOOKAHEAD("." "super" ".")
   "." "super"
 |
   LOOKAHEAD("." "this")
@@ -1818,9 +1848,14 @@ void PrimarySuffix():
 |
   "[" Expression() "]"
 |
-  "." <IDENTIFIER>
+  "." nameToken = <IDENTIFIER>
 |
   Arguments()
+  {
+    return "()";  })
+
+  {
+    return nameToken == null ? "" : String.format(".%s", nameToken.toString());  }
 }
 
 void Literal():
@@ -2129,7 +2164,7 @@ void RUNSIGNEDSHIFT():
 {}
 {
   ( LOOKAHEAD({ getToken(1).kind == GT &&
-                ((MyToken)getToken(1)).realKind == RUNSIGNEDSHIFT} )
+                ((JavaToken)getToken(1)).realKind == RUNSIGNEDSHIFT} )
    ">" ">" ">"
   )
 }
@@ -2138,7 +2173,7 @@ void RSIGNEDSHIFT():
 {}
 {
   ( LOOKAHEAD({ getToken(1).kind == GT &&
-                ((MyToken)getToken(1)).realKind == RSIGNEDSHIFT} )
+                ((JavaToken)getToken(1)).realKind == RSIGNEDSHIFT} )
   ">" ">"
   )
 }

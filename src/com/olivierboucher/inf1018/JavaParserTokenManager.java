@@ -1903,7 +1903,7 @@ protected Token jjFillToken()
    beginColumn = input_stream.getBeginColumn();
    endLine = input_stream.getEndLine();
    endColumn = input_stream.getEndColumn();
-   t = MyToken.newToken(jjmatchedKind, curTokenImage);
+   t = JavaToken.newToken(jjmatchedKind, curTokenImage);
 
    t.beginLine = beginLine;
    t.endLine = endLine;
@@ -2080,7 +2080,7 @@ void TokenLexicalActions(Token matchedToken)
         image.append(jjstrLiteralImages[124]);
         lengthOfMatch = jjstrLiteralImages[124].length();
      matchedToken.kind = GT;
-     ((MyToken)matchedToken).realKind = RUNSIGNEDSHIFT;
+     ((JavaToken)matchedToken).realKind = RUNSIGNEDSHIFT;
      input_stream.backup(2);
      matchedToken.image = ">";
          break;
@@ -2088,7 +2088,7 @@ void TokenLexicalActions(Token matchedToken)
         image.append(jjstrLiteralImages[125]);
         lengthOfMatch = jjstrLiteralImages[125].length();
      matchedToken.kind = GT;
-     ((MyToken)matchedToken).realKind = RSIGNEDSHIFT;
+     ((JavaToken)matchedToken).realKind = RSIGNEDSHIFT;
      input_stream.backup(1);
      matchedToken.image = ">";
          break;
